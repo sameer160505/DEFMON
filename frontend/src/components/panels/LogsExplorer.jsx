@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useWebSocket } from '../../context/WebSocketContext';
 
 const LogsExplorer = () => {
   const { authFetch } = useAuth();
+  const { logs: wsLogs } = useWebSocket();
   const [mode, setMode] = useState('received');
   const [logs, setLogs] = useState([]);
   const [selectedPath, setSelectedPath] = useState('');
@@ -11,11 +13,38 @@ const LogsExplorer = () => {
   const [senderFilter, setSenderFilter] = useState('all');
   const [loading, setLoading] = useState(false);
 
+  // Use WebSocket logs for real-time updates
   useEffect(() => {
-    if (mode !== 'files') {
+    if (mode !== 'received') {
+      return;
+    }
+    
+    // Filter logs by sender if needed
+    let filtered = wsLogs;
+    if (senderFilter !== 'all') {
+      filtered = wsLogs.filter(log => log.sender_id === senderFilter);
+    }
+    
+    setReceivedRows(filtered);
+    
+    // Format logs for display
+    const ordered = [...filtered].reverse();
+    const merged = ordered
+      .map((row) => {
+        const ts = row.timestamp ? new Date(row.timestamp).toISOString() : '-';
+        const senderLabel = row.sender_name || row.sender_id || 'local-file';
+        return `[${ts}] [sender=${senderLabel}] ${row.raw_line}`;
+      })
+      .join('\n');
+    setContent(merged || 'No received logs found.');
+  }, [mode, wsLogs, senderFilter]);
+
+  useEffect(() => {
+    if (mode !== 'received') {
       return;
     }
 
+    // Initial fetch for file browser mode only
     const loadLogs = async () => {
       try {
         const res = await authFetch('/api/logs');
@@ -30,7 +59,10 @@ const LogsExplorer = () => {
       }
     };
 
-    loadLogs();
+    // Only fetch if in file browser mode
+    if (mode === 'files') {
+      loadLogs();
+    }
   }, [authFetch, mode]);
 
   useEffect(() => {
@@ -64,53 +96,6 @@ const LogsExplorer = () => {
 
     loadContent();
   }, [authFetch, selectedPath, mode]);
-
-  useEffect(() => {
-    if (mode !== 'received') {
-      return;
-    }
-
-    const loadReceived = async () => {
-      setLoading(true);
-      try {
-        const query = new URLSearchParams();
-        query.set('limit', '300');
-        if (senderFilter !== 'all') {
-          query.set('sender_id', senderFilter);
-        }
-
-        const res = await authFetch(`/api/logs/received?${query.toString()}`);
-        if (!res.ok) {
-          setReceivedRows([]);
-          setContent('Failed to load received log stream');
-          return;
-        }
-
-        const data = await res.json();
-        setReceivedRows(data);
-
-        const ordered = [...data].reverse();
-        const merged = ordered
-          .map((row) => {
-            const ts = row.timestamp ? new Date(row.timestamp).toISOString() : '-';
-            const senderLabel = row.sender_name || row.sender_id || 'local-file';
-            return `[${ts}] [sender=${senderLabel}] ${row.raw_line}`;
-          })
-          .join('\n');
-        setContent(merged || 'No received logs found.');
-      } catch (err) {
-        console.error('Failed to load received logs', err);
-        setReceivedRows([]);
-        setContent('Failed to load received log stream');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReceived();
-    const interval = setInterval(loadReceived, 5000);
-    return () => clearInterval(interval);
-  }, [authFetch, mode, senderFilter]);
 
   const handleDownload = async () => {
     if (!selectedPath) return;

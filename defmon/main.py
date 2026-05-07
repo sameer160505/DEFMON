@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         pipeline_task = asyncio.create_task(pipeline.run())
         logger.info("Local file collector pipeline enabled")
     else:
-        logger.info("Local file collector disabled: expecting logs from remote Linux senders only")
+        logger.info("Local file collector disabled: expecting logs from remote senders")
 
     yield
 

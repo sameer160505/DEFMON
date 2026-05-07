@@ -6,6 +6,7 @@ const WebSocketContext = createContext(null);
 export const WebSocketProvider = ({ children }) => {
   const { token } = useAuth();
   const [alerts, setAlerts] = useState([]);
+  const [logs, setLogs] = useState([]);
   const ws = useRef(null);
 
   useEffect(() => {
@@ -28,16 +29,30 @@ export const WebSocketProvider = ({ children }) => {
       ws.current.onmessage = (event) => {
         try {
           const payload = JSON.parse(event.data);
-          const newAlert = payload?.type === 'alert' && payload?.alert ? payload.alert : payload;
-          const normalizedAlert = {
-            ...newAlert,
-            id: newAlert.id || newAlert.alert_id,
-          };
-          setAlerts((prevAlerts) => {
-            // Keep last 50 alerts in memory
-            const updated = [normalizedAlert, ...prevAlerts];
-            return updated.slice(0, 50);
-          });
+          
+          // Handle alerts
+          if (payload?.type === 'alert' && payload?.alert) {
+            const newAlert = payload.alert;
+            const normalizedAlert = {
+              ...newAlert,
+              id: newAlert.id || newAlert.alert_id,
+            };
+            setAlerts((prevAlerts) => {
+              // Keep last 50 alerts in memory
+              const updated = [normalizedAlert, ...prevAlerts];
+              return updated.slice(0, 50);
+            });
+          }
+          
+          // Handle logs
+          if (payload?.type === 'log' && payload?.log) {
+            const newLog = payload.log;
+            setLogs((prevLogs) => {
+              // Keep last 300 logs in memory for real-time display
+              const updated = [newLog, ...prevLogs];
+              return updated.slice(0, 300);
+            });
+          }
         } catch (err) {
           console.error("Failed to parse websocket message", err);
         }
@@ -89,8 +104,29 @@ export const WebSocketProvider = ({ children }) => {
     fetchHistory();
   }, [token]);
 
+  // Initial fetch for logs
+  useEffect(() => {
+    if (!token) return;
+    
+    const fetchLogsHistory = async () => {
+      try {
+        const res = await fetch('/api/logs/received?limit=300', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLogs(data);
+        }
+      } catch (err) {
+        console.error('Failed to load initial logs history', err);
+      }
+    };
+
+    fetchLogsHistory();
+  }, [token]);
+
   return (
-    <WebSocketContext.Provider value={{ alerts }}>
+    <WebSocketContext.Provider value={{ alerts, logs }}>
       {children}
     </WebSocketContext.Provider>
   );

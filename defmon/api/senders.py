@@ -321,23 +321,42 @@ async def ingest_remote_logs(
         else:
             normal_lines += 1
 
-        db.add(
-            LogEntry(
-                timestamp=_to_naive_utc(event.timestamp),
-                ip=event.ip,
-                method=event.method,
-                uri=event.uri,
-                status_code=event.status_code,
-                bytes_sent=event.bytes_sent,
-                user_agent=event.user_agent,
-                referrer=event.referrer,
-                raw_line=event.raw_line,
-                sender_id=sender.id,
-                sender_name=sender.name,
-                classification="malicious" if is_malicious else "normal",
-                is_malicious=is_malicious,
-                created_at=datetime.utcnow(),
-            )
+        log_entry = LogEntry(
+            timestamp=_to_naive_utc(event.timestamp),
+            ip=event.ip,
+            method=event.method,
+            uri=event.uri,
+            status_code=event.status_code,
+            bytes_sent=event.bytes_sent,
+            user_agent=event.user_agent,
+            referrer=event.referrer,
+            raw_line=event.raw_line,
+            sender_id=sender.id,
+            sender_name=sender.name,
+            classification="malicious" if is_malicious else "normal",
+            is_malicious=is_malicious,
+            created_at=datetime.utcnow(),
+        )
+        db.add(log_entry)
+        
+        # Broadcast log in real-time to WebSocket clients
+        await manager.broadcast(
+            {
+                "type": "log",
+                "log": {
+                    "id": str(log_entry.id) if hasattr(log_entry, 'id') else None,
+                    "timestamp": event.timestamp.isoformat(),
+                    "ip": event.ip,
+                    "method": event.method,
+                    "uri": event.uri,
+                    "status_code": event.status_code,
+                    "sender_name": sender.name,
+                    "sender_id": sender.id,
+                    "classification": "malicious" if is_malicious else "normal",
+                    "is_malicious": is_malicious,
+                    "raw_line": event.raw_line,
+                },
+            }
         )
 
         for alert in alerts:
@@ -394,6 +413,8 @@ async def ingest_remote_logs(
             f"malicious={malicious_lines}, normal={normal_lines}"
         ),
     )
+
+    await db.commit()
 
     return IngestResponse(
         sender_id=sender.id,

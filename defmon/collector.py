@@ -4,7 +4,7 @@ Uses the watchfiles library (free, cross-platform) to detect changes to
 log files and feeds new lines to the parser for processing.
 
 Usage:
-    collector = LogCollector(log_paths=["/var/log/apache2/access.log"])
+    collector = LogCollector(log_paths=["data/real_access_source.log"])
     async for event in collector.watch():
         # event is a LogEvent ready for detection engine
         await detection_engine.analyze(event)
@@ -37,7 +37,7 @@ class LogCollector:
         """Initialize the log collector.
 
         Args:
-            log_paths: List of log file paths to watch. Defaults to configured real log sources.
+            log_paths: List of log file paths to watch. Defaults to configured log sources.
             settings: Optional Settings instance for dependency injection.
             callback: Optional async callback invoked for each parsed LogEvent.
         """
@@ -51,12 +51,10 @@ class LogCollector:
             log_paths = list(self._settings.log_sources or [])
             if not log_paths:
                 if self._settings.use_seed_logs:
-                    log_paths = ["data/seed_access.log"]
+                    log_paths = ["data/real_access_source.log"]
                 else:
                     log_paths = [
-                        "/var/log/nginx/access.log",
-                        "/var/log/apache2/access.log",
-                        "/var/log/httpd/access_log",
+                        "data/real_access_source.log",
                         "/app/data/real_access.log",
                     ]
 

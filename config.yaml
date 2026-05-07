@@ -11,7 +11,7 @@ app:
   enable_local_collector: false
 
 # Local file sources are intentionally empty in remote-only mode.
-# DefMon should receive logs from Linux VMs via /api/senders/ingest.
+# DefMon receives logs from remote senders via /api/senders/ingest.
 log_sources: []
 
 database:

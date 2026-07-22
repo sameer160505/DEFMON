@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import secrets
-import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -15,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from defmon.api.auth import RoleChecker
 from defmon.api.websocket import manager
 from defmon.database import get_db
-from defmon.detection.engine import DetectionEngine, Alert as DetectionAlert
+from defmon.detection.engine import DetectionEngine
 from defmon.models import (
     Alert,
     AuditLog,
@@ -144,7 +143,9 @@ async def create_sender(
 ) -> dict:
     existing = await db.execute(select(LogSender).where(LogSender.name == payload.name))
     if existing.scalar_one_or_none() is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sender name already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="Sender name already exists"
+        )
 
     raw_key = _new_api_key()
     sender = LogSender(
@@ -338,13 +339,13 @@ async def ingest_remote_logs(
             created_at=datetime.utcnow(),
         )
         db.add(log_entry)
-        
+
         # Broadcast log in real-time to WebSocket clients
         await manager.broadcast(
             {
                 "type": "log",
                 "log": {
-                    "id": str(log_entry.id) if hasattr(log_entry, 'id') else None,
+                    "id": str(log_entry.id) if hasattr(log_entry, "id") else None,
                     "timestamp": event.timestamp.isoformat(),
                     "ip": event.ip,
                     "method": event.method,

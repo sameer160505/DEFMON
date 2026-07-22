@@ -26,7 +26,9 @@ def _project_root() -> Path:
 
 def _resolve_safe_log_path(raw_path: str) -> Path:
     if not raw_path:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing log path")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Missing log path"
+        )
 
     project_root = _project_root()
     candidate = (project_root / raw_path).resolve()
@@ -35,7 +37,9 @@ def _resolve_safe_log_path(raw_path: str) -> Path:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
     if candidate.suffix.lower() != ".log":
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Only .log files are supported")
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Only .log files are supported"
+        )
 
     if not candidate.exists() or not candidate.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log file not found")

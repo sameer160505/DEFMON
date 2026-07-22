@@ -1,8 +1,8 @@
 """Shared pytest fixtures for DefMon test suite."""
 
 import os
+
 import pytest
-from unittest.mock import patch
 
 # Override database URL to SQLite for testing BEFORE importing app modules
 os.environ["DB_USER"] = "test"
@@ -18,7 +18,7 @@ os.environ["DEBUG"] = "true"
 def sample_apache_log() -> str:
     """Sample Apache Combined Log Format line."""
     return (
-        '192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] '
+        "192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] "
         '"GET /index.html HTTP/1.1" 200 2326 '
         '"http://www.example.com/start.html" '
         '"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"'
@@ -29,7 +29,7 @@ def sample_apache_log() -> str:
 def sample_nginx_log() -> str:
     """Sample Nginx access log line."""
     return (
-        '10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] '
+        "10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] "
         '"POST /api/login HTTP/1.1" 401 128 '
         '"-" '
         '"curl/7.68.0"'
@@ -41,7 +41,7 @@ def sample_sqli_log() -> str:
     """Log line with SQL injection attempt in URI."""
     return (
         "192.168.1.200 - - [10/Oct/2024:15:00:00 +0000] "
-        "\"GET /search?q=1'+OR+1=1-- HTTP/1.1\" 200 5123 "
+        '"GET /search?q=1\'+OR+1=1-- HTTP/1.1" 200 5123 '
         '"-" "Mozilla/5.0"'
     )
 

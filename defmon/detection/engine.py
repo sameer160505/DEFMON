@@ -16,7 +16,7 @@ import re
 import time
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -252,13 +252,15 @@ class DetectionEngine:
         for rule in self._settings.detection_rules:
             try:
                 compiled = re.compile(rule["pattern"])
-                self._compiled_rules.append({
-                    "rule_id": rule["rule_id"],
-                    "pattern": compiled,
-                    "severity": rule["severity"],
-                    "description": rule["description"],
-                    "weight": rule.get("weight", 10),
-                })
+                self._compiled_rules.append(
+                    {
+                        "rule_id": rule["rule_id"],
+                        "pattern": compiled,
+                        "severity": rule["severity"],
+                        "description": rule["description"],
+                        "weight": rule.get("weight", 10),
+                    }
+                )
                 logger.debug(f"Compiled detection rule: {rule['rule_id']}")
             except re.error as e:
                 logger.error(f"Invalid detection rule regex '{rule['rule_id']}': {e}")
@@ -365,8 +367,7 @@ class DetectionEngine:
         )
 
         logger.info(
-            f"🚨 Alert: {rule_id} | {severity} | IP={ip} | "
-            f"score={risk_score} | {description[:60]}"
+            f"🚨 Alert: {rule_id} | {severity} | IP={ip} | score={risk_score} | {description[:60]}"
         )
         return alert
 
@@ -522,9 +523,7 @@ class DetectionEngine:
         alerts = []
         ts = event.timestamp.timestamp()
 
-        is_anomaly, current_rpm, baseline_rpm = self._behavioral.record_and_check(
-            event.ip, ts
-        )
+        is_anomaly, current_rpm, baseline_rpm = self._behavioral.record_and_check(event.ip, ts)
 
         if is_anomaly:
             alert = self._create_alert(

@@ -41,8 +41,10 @@ def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = 
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
-    
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.access_token_expire_minutes
+        )
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     return encoded_jwt
@@ -79,37 +81,36 @@ async def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = decode_access_token(token)
         username: str = payload.get("sub")
     except HTTPException:
         raise credentials_exception
-        
+
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
-    
+
     if user is None:
         raise credentials_exception
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     if user.is_locked:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User account is locked")
-        
+
     return user
 
 
 class RoleChecker:
     """Dependency: Check if current user has the required roles."""
-    
+
     def __init__(self, allowed_roles: list[UserRole]):
         self.allowed_roles = allowed_roles
 
     def __call__(self, user: User = Depends(get_current_user)) -> User:
         if user.role not in self.allowed_roles:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not enough privileges"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges"
             )
         return user
 
@@ -122,25 +123,24 @@ async def login_for_access_token(
     """Authenticate user and return a JWT access token."""
     result = await db.execute(select(User).where(User.username == form_data.username))
     user = result.scalar_one_or_none()
-    
+
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
+
     if user.is_locked:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account locked")
-        
+
     # Update last login
     user.last_login = datetime.utcnow()
     await db.commit()
-    
+
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
-        data={"sub": user.username, "role": user.role.value},
-        expires_delta=access_token_expires
+        data={"sub": user.username, "role": user.role.value}, expires_delta=access_token_expires
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}

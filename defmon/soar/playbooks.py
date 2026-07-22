@@ -95,10 +95,7 @@ class PlaybookEngine:
                 "incident": None,
             }
 
-        logger.info(
-            f"Executing playbook for {severity} alert {alert.alert_id}: "
-            f"actions={actions}"
-        )
+        logger.info(f"Executing playbook for {severity} alert {alert.alert_id}: actions={actions}")
 
         actions_succeeded: list[str] = []
         actions_failed: list[dict] = []
@@ -106,9 +103,7 @@ class PlaybookEngine:
 
         for action_name in actions:
             try:
-                result = await self._dispatch_action(
-                    action_name, alert, session
-                )
+                result = await self._dispatch_action(action_name, alert, session)
                 actions_succeeded.append(action_name)
 
                 # Capture incident reference
@@ -118,13 +113,14 @@ class PlaybookEngine:
             except Exception as e:
                 # Fault-tolerant: log error and continue
                 logger.error(
-                    f"Playbook action '{action_name}' failed for alert "
-                    f"{alert.alert_id}: {e}"
+                    f"Playbook action '{action_name}' failed for alert {alert.alert_id}: {e}"
                 )
-                actions_failed.append({
-                    "action": action_name,
-                    "error": str(e),
-                })
+                actions_failed.append(
+                    {
+                        "action": action_name,
+                        "error": str(e),
+                    }
+                )
 
         # Summary log
         total = len(actions)
@@ -178,9 +174,7 @@ class PlaybookEngine:
                     session=session,
                 )
             else:
-                logger.debug(
-                    f"Skipping lock_account — no username in alert {alert.alert_id}"
-                )
+                logger.debug(f"Skipping lock_account — no username in alert {alert.alert_id}")
             return None
 
         elif action_name == "create_incident":

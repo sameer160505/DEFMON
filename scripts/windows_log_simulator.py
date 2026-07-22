@@ -32,7 +32,9 @@ PAYLOADS = [
 ]
 
 
-def post_batch(api_base: str, sender_id: str, sender_key: str, lines: list[str], timeout: int) -> dict:
+def post_batch(
+    api_base: str, sender_id: str, sender_key: str, lines: list[str], timeout: int
+) -> dict:
     query = parse.urlencode({"sender_id": sender_id, "sender_key": sender_key})
     url = f"{api_base.rstrip('/')}/api/senders/ingest?{query}"
 
@@ -100,9 +102,14 @@ def chunks(lines: list[str], size: int) -> Iterable[list[str]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Replay real access logs to DefMon and inject malicious payloads into original lines."
+        description=(
+            "Replay real access logs to DefMon and "
+            "inject malicious payloads into original lines."
+        )
     )
-    parser.add_argument("--api-base", required=True, help="DefMon API URL, e.g. http://127.0.0.1:8000")
+    parser.add_argument(
+        "--api-base", required=True, help="DefMon API URL, e.g. http://127.0.0.1:8000"
+    )
     parser.add_argument("--sender-id", required=True, help="Sender ID from DefMon admin")
     parser.add_argument("--sender-key", required=True, help="Sender API key from DefMon admin")
     parser.add_argument(

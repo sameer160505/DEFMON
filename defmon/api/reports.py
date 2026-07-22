@@ -1,8 +1,8 @@
 """DefMon reporting API for downloadable SOC snapshots."""
 
 import csv
-from io import StringIO
 from datetime import datetime, timedelta, timezone
+from io import StringIO
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
@@ -22,27 +22,52 @@ async def _build_daily_report(db: AsyncSession) -> dict:
     since = now - timedelta(hours=24)
 
     summary = {
-        "alerts_24h": int(await db.scalar(select(func.count(Alert.id)).where(Alert.timestamp >= since)) or 0),
-        "critical_24h": int(await db.scalar(select(func.count(Alert.id)).where(Alert.timestamp >= since, Alert.severity == "Critical")) or 0),
-        "open_incidents": int(await db.scalar(select(func.count(Incident.id)).where(Incident.status == IncidentStatus.OPEN)) or 0),
-        "actions_24h": int(await db.scalar(
-            select(func.count(AuditLog.id)).where(
-                AuditLog.timestamp >= since,
-                AuditLog.actor == "SOAR",
+        "alerts_24h": int(
+            await db.scalar(select(func.count(Alert.id)).where(Alert.timestamp >= since)) or 0
+        ),
+        "critical_24h": int(
+            await db.scalar(
+                select(func.count(Alert.id)).where(
+                    Alert.timestamp >= since, Alert.severity == "Critical"
+                )
             )
-        ) or 0),
+            or 0
+        ),
+        "open_incidents": int(
+            await db.scalar(
+                select(func.count(Incident.id)).where(Incident.status == IncidentStatus.OPEN)
+            )
+            or 0
+        ),
+        "actions_24h": int(
+            await db.scalar(
+                select(func.count(AuditLog.id)).where(
+                    AuditLog.timestamp >= since,
+                    AuditLog.actor == "SOAR",
+                )
+            )
+            or 0
+        ),
     }
 
-    recent_incidents_rows = (await db.execute(
-        select(Incident).order_by(desc(Incident.created_at)).limit(20)
-    )).scalars().all()
+    recent_incidents_rows = (
+        (await db.execute(select(Incident).order_by(desc(Incident.created_at)).limit(20)))
+        .scalars()
+        .all()
+    )
 
-    recent_actions_rows = (await db.execute(
-        select(AuditLog)
-        .where(AuditLog.actor == "SOAR")
-        .order_by(desc(AuditLog.timestamp))
-        .limit(50)
-    )).scalars().all()
+    recent_actions_rows = (
+        (
+            await db.execute(
+                select(AuditLog)
+                .where(AuditLog.actor == "SOAR")
+                .order_by(desc(AuditLog.timestamp))
+                .limit(50)
+            )
+        )
+        .scalars()
+        .all()
+    )
 
     return {
         "report_type": "defmon_daily_soc_report",
@@ -94,44 +119,66 @@ async def download_daily_report(
 
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["section", "field", "value", "timestamp", "case_id", "status", "severity", "description", "actor", "target", "details"])
+    writer.writerow(
+        [
+            "section",
+            "field",
+            "value",
+            "timestamp",
+            "case_id",
+            "status",
+            "severity",
+            "description",
+            "actor",
+            "target",
+            "details",
+        ]
+    )
 
-    writer.writerow(["report", "report_type", payload["report_type"], "", "", "", "", "", "", "", ""])
-    writer.writerow(["report", "generated_at", payload["generated_at"], "", "", "", "", "", "", "", ""])
+    writer.writerow(
+        ["report", "report_type", payload["report_type"], "", "", "", "", "", "", "", ""]
+    )
+    writer.writerow(
+        ["report", "generated_at", payload["generated_at"], "", "", "", "", "", "", "", ""]
+    )
     writer.writerow(["report", "window", payload["window"], "", "", "", "", "", "", "", ""])
 
     for key, value in payload["summary"].items():
         writer.writerow(["summary", key, value, "", "", "", "", "", "", "", ""])
 
     for incident in payload["recent_incidents"]:
-        writer.writerow([
-            "incident",
-            "",
-            "",
-            incident.get("created_at") or "",
-            incident.get("case_id") or "",
-            incident.get("status") or "",
-            incident.get("severity") or "",
-            incident.get("description") or "",
-            "",
-            "",
-            "",
-        ])
+        writer.writerow(
+            [
+                "incident",
+                "",
+                "",
+                incident.get("created_at") or "",
+                incident.get("case_id") or "",
+                incident.get("status") or "",
+                incident.get("severity") or "",
+                incident.get("description") or "",
+                "",
+                "",
+                "",
+            ]
+        )
 
     for action in payload["recent_actions"]:
-        writer.writerow([
-            "action",
-            action.get("action") or "",
-            "",
-            action.get("timestamp") or "",
-            "",
-            "",
-            "",
-            "",
-            action.get("actor") or "",
-            action.get("target") or "",
-            action.get("details") or "",
-        ])
+        writer.writerow(
+            [
+                "action",
+                action.get("action") or "",
+                "",
+                action.get("timestamp") or "",
+                "",
+                "",
+                "",
+                "",
+                action.get("actor") or "",
+                action.get("target") or "",
+                action.get("details") or "",
+            ]
+        )
 
     body = output.getvalue()
 

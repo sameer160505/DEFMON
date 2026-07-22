@@ -14,7 +14,7 @@ ws_router = APIRouter(prefix="/ws", tags=["WebSocket"])
 
 class ConnectionManager:
     """Manages active WebSocket connections for live feed."""
-    
+
     def __init__(self):
         self.active_connections: list[WebSocket] = []
         self._lock = asyncio.Lock()

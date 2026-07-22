@@ -1,18 +1,17 @@
 """DefMon Incidents API endpoints."""
 
-import uuid
 from datetime import datetime, timezone
-from typing import Annotated, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import select, desc
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from defmon.api.auth import RoleChecker
 from defmon.database import get_db
-from defmon.models import Alert, Incident, IncidentStatus, SeverityLevel, User, UserRole
+from defmon.models import Incident, IncidentStatus, SeverityLevel, User, UserRole
 
 incidents_router = APIRouter(prefix="/incidents", tags=["Incidents"])
 
@@ -34,17 +33,19 @@ async def get_incidents(
     db: AsyncSession = Depends(get_db),
 ) -> list[dict]:
     """Retrieve paginated incidents, optionally filtering by status and severity."""
-    query = select(Incident).options(selectinload(Incident.alert)).order_by(desc(Incident.created_at))
-    
+    query = (
+        select(Incident).options(selectinload(Incident.alert)).order_by(desc(Incident.created_at))
+    )
+
     if status_filter:
         query = query.where(Incident.status == status_filter)
     if severity_filter:
         query = query.where(Incident.severity == severity_filter)
-        
+
     query = query.offset(offset).limit(limit)
     result = await db.execute(query)
     incidents = result.scalars().all()
-    
+
     return [
         {
             "id": i.id,
@@ -58,7 +59,9 @@ async def get_incidents(
                 "alert_id": str(i.alert.alert_id),
                 "ip": i.alert.ip,
                 "rule_id": i.alert.rule_id,
-            } if i.alert else None
+            }
+            if i.alert
+            else None,
         }
         for i in incidents
     ]
@@ -72,15 +75,13 @@ async def get_incident(
 ) -> dict:
     """Get full details for a specific incident tracker."""
     result = await db.execute(
-        select(Incident)
-        .options(selectinload(Incident.alert))
-        .where(Incident.case_id == case_id)
+        select(Incident).options(selectinload(Incident.alert)).where(Incident.case_id == case_id)
     )
     incident = result.scalar_one_or_none()
-    
+
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident not found")
-        
+
     return {
         "id": incident.id,
         "case_id": str(incident.case_id),
@@ -98,8 +99,10 @@ async def get_incident(
             "description": incident.alert.description,
             "risk_score": incident.alert.risk_score,
             "tags": incident.alert.tags,
-            "raw_event": incident.alert.raw_event
-        } if incident.alert else None
+            "raw_event": incident.alert.raw_event,
+        }
+        if incident.alert
+        else None,
     }
 
 
@@ -121,7 +124,9 @@ async def update_incident_status(
     try:
         parsed_case_id = case_id
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid case_id") from exc
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid case_id"
+        ) from exc
 
     result = await db.execute(
         select(Incident)

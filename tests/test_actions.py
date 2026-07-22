@@ -10,14 +10,13 @@ Covers:
 
 import uuid
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-import pytest_asyncio
 
 from defmon.detection.engine import Alert
-from defmon.models import AuditLog, BlockedIP, Incident, IncidentStatus, SeverityLevel, User
+from defmon.models import AuditLog, BlockedIP, Incident, IncidentStatus, SeverityLevel
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +32,7 @@ def sample_alert():
         rule_id="SQLI_001",
         severity="Critical",
         description="SQL Injection attempt detected",
-        raw_event='GET /search?q=1\' OR 1=1-- HTTP/1.1',
+        raw_event="GET /search?q=1' OR 1=1-- HTTP/1.1",
         risk_score=65.0,
         tags=["botnet", "scanner"],
         username="admin",
@@ -50,7 +49,7 @@ def sample_alert_no_username():
         rule_id="XSS_001",
         severity="High",
         description="XSS attempt detected",
-        raw_event='GET /comment?text=<script>alert(1)</script> HTTP/1.1',
+        raw_event="GET /comment?text=<script>alert(1)</script> HTTP/1.1",
         risk_score=50.0,
     )
 
@@ -189,9 +188,7 @@ async def test_create_incident_high_severity(mock_session, sample_alert_no_usern
     """create_incident should handle High severity correctly."""
     from defmon.soar.actions import create_incident
 
-    incident = await create_incident(
-        alert=sample_alert_no_username, session=mock_session
-    )
+    incident = await create_incident(alert=sample_alert_no_username, session=mock_session)
 
     assert incident.severity == SeverityLevel.HIGH
 
@@ -245,9 +242,7 @@ async def test_send_notification_timeout(mock_session, sample_alert):
     with patch.dict("os.environ", {"WEBHOOK_URL": "https://hooks.example.com/test"}):
         with patch("defmon.soar.actions.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
-            mock_client.post = AsyncMock(
-                side_effect=httpx.TimeoutException("timeout")
-            )
+            mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_client_cls.return_value = mock_client
@@ -262,11 +257,9 @@ async def test_send_notification_timeout(mock_session, sample_alert):
 @pytest.mark.asyncio
 async def test_audit_trail_before_action(mock_session, sample_alert):
     """Verify audit log is added before the main action in all SOAR functions."""
-    from defmon.soar.actions import block_ip, _write_audit_log
+    from defmon.soar.actions import block_ip
 
     call_order = []
-
-    original_add = mock_session.add
 
     def tracking_add(obj):
         call_order.append(type(obj).__name__)

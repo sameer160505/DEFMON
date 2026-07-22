@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 
 from defmon.detection.engine import Alert
 from defmon.models import Incident, IncidentStatus, SeverityLevel
@@ -82,7 +81,7 @@ def critical_alert():
         rule_id="SQLI_001",
         severity="Critical",
         description="SQL Injection attempt detected",
-        raw_event='GET /search?q=1\' OR 1=1--',
+        raw_event="GET /search?q=1' OR 1=1--",
         risk_score=65.0,
         tags=["botnet"],
         username="admin",
@@ -99,7 +98,7 @@ def high_alert():
         rule_id="XSS_001",
         severity="High",
         description="XSS attempt detected",
-        raw_event='GET /comment?text=<script>alert(1)</script>',
+        raw_event="GET /comment?text=<script>alert(1)</script>",
         risk_score=50.0,
     )
 
@@ -114,7 +113,7 @@ def medium_alert():
         rule_id="SCAN_001",
         severity="Medium",
         description="Port scanning detected",
-        raw_event='GET /nonexistent HTTP/1.1',
+        raw_event="GET /nonexistent HTTP/1.1",
         risk_score=30.0,
     )
 
@@ -129,7 +128,7 @@ def low_alert():
         rule_id="INFO_001",
         severity="Low",
         description="Informational event",
-        raw_event='GET /robots.txt HTTP/1.1',
+        raw_event="GET /robots.txt HTTP/1.1",
         risk_score=10.0,
     )
 
@@ -152,11 +151,12 @@ def mock_incident():
 @pytest.mark.asyncio
 async def test_critical_playbook(engine, critical_alert, mock_session, mock_incident):
     """Critical alert should trigger all 4 actions."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send,
+    ):
         mock_create.return_value = mock_incident
 
         result = await engine.execute(critical_alert, mock_session)
@@ -178,11 +178,12 @@ async def test_critical_playbook(engine, critical_alert, mock_session, mock_inci
 @pytest.mark.asyncio
 async def test_high_playbook(engine, high_alert, mock_session, mock_incident):
     """High alert should trigger block_ip, create_incident, send_notification."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send,
+    ):
         mock_create.return_value = mock_incident
 
         result = await engine.execute(high_alert, mock_session)
@@ -205,10 +206,11 @@ async def test_high_playbook(engine, high_alert, mock_session, mock_incident):
 @pytest.mark.asyncio
 async def test_medium_playbook(engine, medium_alert, mock_session, mock_incident):
     """Medium alert should trigger create_incident + send_notification only."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send,
+    ):
         mock_create.return_value = mock_incident
 
         result = await engine.execute(medium_alert, mock_session)
@@ -229,10 +231,11 @@ async def test_medium_playbook(engine, medium_alert, mock_session, mock_incident
 @pytest.mark.asyncio
 async def test_low_playbook(engine, low_alert, mock_session, mock_incident):
     """Low alert should trigger only create_incident."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send,
+    ):
         mock_create.return_value = mock_incident
 
         result = await engine.execute(low_alert, mock_session)
@@ -252,11 +255,12 @@ async def test_low_playbook(engine, low_alert, mock_session, mock_incident):
 @pytest.mark.asyncio
 async def test_fault_tolerance(engine, critical_alert, mock_session, mock_incident):
     """If one action fails, remaining actions should still execute."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send,
+    ):
         # Make block_ip raise an exception
         mock_block.side_effect = Exception("Database connection failed")
         mock_create.return_value = mock_incident
@@ -281,16 +285,19 @@ async def test_fault_tolerance(engine, critical_alert, mock_session, mock_incide
 @pytest.mark.asyncio
 async def test_multiple_failures_continue(engine, critical_alert, mock_session):
     """Multiple failures should all be logged, engine keeps running."""
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block, \
-         patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock) as mock_send:
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock) as mock_block,
+        patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock),
+    ):
         mock_block.side_effect = Exception("Block failed")
         mock_lock.side_effect = Exception("Lock failed")
         mock_create.return_value = Incident(
-            case_id=uuid.uuid4(), alert_id=uuid.uuid4(),
-            status=IncidentStatus.OPEN, severity=SeverityLevel.CRITICAL,
+            case_id=uuid.uuid4(),
+            alert_id=uuid.uuid4(),
+            status=IncidentStatus.OPEN,
+            severity=SeverityLevel.CRITICAL,
         )
 
         result = await engine.execute(critical_alert, mock_session)
@@ -342,11 +349,12 @@ async def test_lock_account_skipped_no_username(engine, mock_session, mock_incid
         username=None,  # No username
     )
 
-    with patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock), \
-         patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock, \
-         patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create, \
-         patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock):
-
+    with (
+        patch("defmon.soar.playbooks.block_ip", new_callable=AsyncMock),
+        patch("defmon.soar.playbooks.lock_account", new_callable=AsyncMock) as mock_lock,
+        patch("defmon.soar.playbooks.create_incident", new_callable=AsyncMock) as mock_create,
+        patch("defmon.soar.playbooks.send_alert_notification", new_callable=AsyncMock),
+    ):
         mock_create.return_value = mock_incident
         result = await engine.execute(alert_no_user, mock_session)
 

@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
-import uuid
 from datetime import datetime, timezone
 
 from loguru import logger
 
+from defmon.api.websocket import manager
 from defmon.collector import LogCollector
 from defmon.database import get_session_factory
-from defmon.detection.engine import DetectionEngine, Alert as DetectionAlert
+from defmon.detection.engine import Alert as DetectionAlert
+from defmon.detection.engine import DetectionEngine
 from defmon.models import Alert, LogEntry, SeverityLevel
 from defmon.soar.playbooks import get_playbook_engine
 from defmon.utils.threat_intel import ThreatIntelService
-from defmon.api.websocket import manager
 
 
 class DefmonPipeline:
@@ -84,7 +84,9 @@ class DefmonPipeline:
     async def process_event(self, event) -> None:
         """Process one parsed log event through the full backend pipeline."""
         intel = await self._threat_intel.lookup_ip(event.ip)
-        alerts = await self._detector.analyze(event, threat_intel_score=float(intel.confidence_score))
+        alerts = await self._detector.analyze(
+            event, threat_intel_score=float(intel.confidence_score)
+        )
         is_malicious = len(alerts) > 0
 
         async with self._session_factory() as session:

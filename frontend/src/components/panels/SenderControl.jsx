@@ -39,7 +39,7 @@ const SenderControl = () => {
     loadSenders();
     const interval = setInterval(loadSenders, 10000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   const createSender = async (e) => {

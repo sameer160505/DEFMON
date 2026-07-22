@@ -1,12 +1,10 @@
 """DefMon Alerts API points."""
 
-import uuid
 from datetime import datetime, timedelta
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import func, select, desc
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from defmon.api.auth import RoleChecker
@@ -33,10 +31,7 @@ async def get_alerts(
 ) -> list[dict]:
     """Retrieve chronologically ordered alerts."""
     result = await db.execute(
-        select(Alert)
-        .order_by(desc(Alert.timestamp))
-        .offset(offset)
-        .limit(limit)
+        select(Alert).order_by(desc(Alert.timestamp)).offset(offset).limit(limit)
     )
     alerts = result.scalars().all()
     # Pydantic serialization is better, but returning mapped dicts is okay
@@ -64,7 +59,7 @@ async def get_alerts_summary(
 ) -> dict[str, int]:
     """Get Critical/High/Medium/Low counts from the last 24 hours."""
     twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
-    
+
     result = await db.execute(
         select(Alert.severity, func.count(Alert.id))
         .where(Alert.timestamp >= twenty_four_hours_ago)
@@ -74,7 +69,7 @@ async def get_alerts_summary(
         (severity.value if hasattr(severity, "value") else severity): count
         for severity, count in result.all()
     }
-    
+
     return {
         "Critical": counts.get("Critical", 0),
         "High": counts.get("High", 0),
@@ -90,7 +85,7 @@ async def get_top_offenders(
 ) -> list[dict]:
     """Top 10 attacker IPs by alert count in the last 24 hours."""
     twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
-    
+
     result = await db.execute(
         select(Alert.ip, func.count(Alert.id).label("total_alerts"))
         .where(Alert.timestamp >= twenty_four_hours_ago)
@@ -98,13 +93,10 @@ async def get_top_offenders(
         .order_by(desc("total_alerts"))
         .limit(10)
     )
-    
+
     offenders = []
     for ip, count in result.all():
-        offenders.append({
-            "ip": ip,
-            "alerts": count
-        })
+        offenders.append({"ip": ip, "alerts": count})
     return offenders
 
 
@@ -127,7 +119,9 @@ async def update_alert_status(
     try:
         parsed_alert_id = alert_id
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid alert_id") from exc
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid alert_id"
+        ) from exc
 
     result = await db.execute(select(Alert).where(Alert.alert_id == parsed_alert_id))
     alert = result.scalar_one_or_none()

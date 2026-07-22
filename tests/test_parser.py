@@ -15,14 +15,10 @@ Plus additional edge-case and async tests.
 """
 
 import time
-import asyncio
-import tempfile
-import os
-from pathlib import Path
 
 import pytest
 
-from defmon.parser import LogParser, LogEvent, parse_file, _parse_timestamp, _parse_bytes
+from defmon.parser import LogEvent, LogParser, _parse_bytes, _parse_timestamp, parse_file
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +39,7 @@ class TestValidApacheLog:
     def test_valid_apache_log_parses(self, parser):
         """A standard Apache Combined log line must parse into a LogEvent."""
         line = (
-            '192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] "
             '"GET /index.html HTTP/1.1" 200 2326 '
             '"http://www.example.com/start.html" '
             '"Mozilla/5.0 (Windows NT 10.0; Win64; x64)"'
@@ -180,7 +176,7 @@ class TestMissingFields:
     def test_missing_referrer(self, parser):
         """Lines with '-' as referrer must parse with empty referrer."""
         line = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 200 1024 "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -190,7 +186,7 @@ class TestMissingFields:
     def test_missing_bytes_dash(self, parser):
         """Lines with '-' as byte count must parse with bytes_sent=0."""
         line = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 304 - "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -207,7 +203,7 @@ class TestIPv6Address:
     def test_ipv6_address_parsed(self, parser):
         """IPv6 addresses must be parsed correctly from log lines."""
         line = (
-            '::1 - - [10/Oct/2024:13:55:36 +0000] '
+            "::1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -217,7 +213,7 @@ class TestIPv6Address:
     def test_full_ipv6_address(self, parser):
         """Full IPv6 addresses (e.g. 2001:db8::1) must be parsed."""
         line = (
-            '2001:db8::1 - - [10/Oct/2024:14:00:00 +0000] '
+            "2001:db8::1 - - [10/Oct/2024:14:00:00 +0000] "
             '"GET /api/status HTTP/1.1" 200 256 "-" "curl/7.68.0"'
         )
         event = parser.parse_line(line)
@@ -234,7 +230,7 @@ class TestEncodedURI:
     def test_encoded_uri_preserved(self, parser):
         """URL-encoded characters in URI must be preserved as-is."""
         line = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /search?q=hello%20world&lang=en HTTP/1.1" 200 4096 "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -244,7 +240,7 @@ class TestEncodedURI:
     def test_encoded_special_chars(self, parser):
         """Special encoded characters (%2F, %3D, etc.) must be preserved."""
         line = (
-            '10.0.0.1 - - [10/Oct/2024:14:00:00 +0000] '
+            "10.0.0.1 - - [10/Oct/2024:14:00:00 +0000] "
             '"GET /path%2Fto%2Fresource%3Fkey%3Dvalue HTTP/1.1" 200 512 "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -261,7 +257,7 @@ class TestLargeByteCount:
     def test_large_byte_count(self, parser):
         """Byte counts in the millions must parse correctly."""
         line = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /download/large-file.zip HTTP/1.1" 200 104857600 "-" "Mozilla/5.0"'
         )
         event = parser.parse_line(line)
@@ -271,7 +267,7 @@ class TestLargeByteCount:
     def test_gigabyte_byte_count(self, parser):
         """Byte counts exceeding 1 GB must parse correctly."""
         line = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /backup.tar.gz HTTP/1.1" 200 1073741824 "-" "wget/1.21"'
         )
         event = parser.parse_line(line)
@@ -335,7 +331,7 @@ class TestThroughput:
     def test_1000_lines_under_200ms(self, parser):
         """1,000 valid log lines must parse in under 0.2 seconds."""
         line = (
-            '192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.100 - frank [10/Oct/2024:13:55:36 +0000] "
             '"GET /index.html HTTP/1.1" 200 2326 '
             '"http://www.example.com/" "Mozilla/5.0"'
         )
@@ -351,7 +347,7 @@ class TestThroughput:
     def test_5000_lines_throughput(self, parser):
         """5,000 lines must parse at ≥5,000 lines/sec (CI throughput target)."""
         line = (
-            '10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] '
+            "10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] "
             '"POST /api/login HTTP/1.1" 401 128 '
             '"-" "curl/7.68.0"'
         )
@@ -368,7 +364,7 @@ class TestThroughput:
     def test_10000_lines_mixed(self, parser):
         """10,000 lines with mix of valid and invalid must complete efficiently."""
         valid = (
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 200 1024 "-" "Mozilla/5.0"'
         )
         invalid = "not a log line"
@@ -401,8 +397,15 @@ class TestLogEventToDict:
         assert event is not None
         d = event.to_dict()
         required_keys = {
-            "timestamp", "ip", "method", "uri", "status_code",
-            "bytes_sent", "user_agent", "referrer", "raw_line",
+            "timestamp",
+            "ip",
+            "method",
+            "uri",
+            "status_code",
+            "bytes_sent",
+            "user_agent",
+            "referrer",
+            "raw_line",
         }
         assert required_keys.issubset(d.keys())
 
@@ -426,9 +429,9 @@ class TestParseFile:
         """parse_file() must yield LogEvent objects from a file."""
         log_file = tmp_path / "test_access.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"\n'
-            '10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] '
+            "10.0.0.1 - admin [10/Oct/2024:14:00:00 +0000] "
             '"POST /api/login HTTP/1.1" 401 128 "-" "curl/7.68.0"\n'
         )
         events = []
@@ -444,10 +447,10 @@ class TestParseFile:
         """parse_file() must skip malformed lines without stopping."""
         log_file = tmp_path / "mixed.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 200 1024 "-" "Mozilla/5.0"\n'
-            'THIS IS NOT A LOG LINE\n'
-            '10.0.0.5 - - [10/Oct/2024:14:00:00 +0000] '
+            "THIS IS NOT A LOG LINE\n"
+            "10.0.0.5 - - [10/Oct/2024:14:00:00 +0000] "
             '"GET /api HTTP/1.1" 200 256 "-" "curl/7.68.0"\n'
         )
         events = []
@@ -486,9 +489,9 @@ class TestParseLines:
     def test_parse_lines_multiple(self, parser):
         """parse_lines() must process a list of lines and return LogEvents."""
         lines = [
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /a HTTP/1.1" 200 100 "-" "Mozilla/5.0"',
-            '192.168.1.2 - - [10/Oct/2024:13:55:37 +0000] '
+            "192.168.1.2 - - [10/Oct/2024:13:55:37 +0000] "
             '"GET /b HTTP/1.1" 200 200 "-" "Mozilla/5.0"',
         ]
         events = parser.parse_lines(lines)
@@ -497,7 +500,7 @@ class TestParseLines:
     def test_parse_lines_filters_invalid(self, parser):
         """parse_lines() must filter out invalid lines."""
         lines = [
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /a HTTP/1.1" 200 100 "-" "Mozilla/5.0"',
             "invalid line",
             "",

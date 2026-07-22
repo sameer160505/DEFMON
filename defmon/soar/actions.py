@@ -14,7 +14,6 @@ Actions:
 import os
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import httpx
 from loguru import logger
@@ -22,11 +21,10 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from defmon.config import get_settings
-from defmon.models import AuditLog, BlockedIP, Incident, IncidentStatus, SeverityLevel, User
-
 
 # Import Alert from detection engine (the dataclass, not the ORM model)
 from defmon.detection.engine import Alert
+from defmon.models import AuditLog, BlockedIP, Incident, IncidentStatus, SeverityLevel, User
 
 
 # ---------------------------------------------------------------------------
@@ -83,9 +81,7 @@ async def block_ip(ip: str, session: AsyncSession, reason: str = "") -> None:
     )
 
     # Check if IP is already blocked
-    result = await session.execute(
-        select(BlockedIP).where(BlockedIP.ip == ip)
-    )
+    result = await session.execute(select(BlockedIP).where(BlockedIP.ip == ip))
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -111,9 +107,7 @@ async def block_ip(ip: str, session: AsyncSession, reason: str = "") -> None:
                     f.write(f"ALL: {ip}\n")
                 logger.info(f"Added {ip} to /etc/hosts.deny")
             else:
-                logger.warning(
-                    f"Cannot write to /etc/hosts.deny — process is not root"
-                )
+                logger.warning("Cannot write to /etc/hosts.deny — process is not root")
         except (AttributeError, OSError) as e:
             # os.getuid() not available on Windows, or file write error
             logger.warning(f"System-level block failed for {ip}: {e}")
@@ -141,10 +135,7 @@ async def lock_account(username: str, session: AsyncSession) -> None:
 
     # Update user record
     result = await session.execute(
-        update(User)
-        .where(User.username == username)
-        .values(is_locked=True)
-        .returning(User.id)
+        update(User).where(User.username == username).values(is_locked=True).returning(User.id)
     )
     updated = result.scalar_one_or_none()
 
@@ -193,9 +184,7 @@ async def create_incident(alert: Alert, session: AsyncSession) -> Incident:
         alert_id=alert.alert_id,
         status=IncidentStatus.OPEN,
         severity=severity_enum,
-        description=(
-            f"Auto-generated incident for {alert.rule_id}: {alert.description}"
-        ),
+        description=(f"Auto-generated incident for {alert.rule_id}: {alert.description}"),
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
@@ -234,8 +223,7 @@ async def send_alert_notification(alert: Alert, session: AsyncSession) -> None:
 
     if not webhook_url:
         logger.warning(
-            "WEBHOOK_URL not set — skipping alert notification for "
-            f"alert {alert.alert_id}"
+            f"WEBHOOK_URL not set — skipping alert notification for alert {alert.alert_id}"
         )
         return
 
@@ -259,15 +247,8 @@ async def send_alert_notification(alert: Alert, session: AsyncSession) -> None:
             f"to {webhook_url} (status={response.status_code})"
         )
     except httpx.TimeoutException:
-        logger.warning(
-            f"Webhook timeout sending alert {alert.alert_id} to {webhook_url}"
-        )
+        logger.warning(f"Webhook timeout sending alert {alert.alert_id} to {webhook_url}")
     except httpx.HTTPStatusError as e:
-        logger.warning(
-            f"Webhook HTTP error for alert {alert.alert_id}: "
-            f"{e.response.status_code}"
-        )
+        logger.warning(f"Webhook HTTP error for alert {alert.alert_id}: {e.response.status_code}")
     except Exception as e:
-        logger.warning(
-            f"Webhook unexpected error for alert {alert.alert_id}: {e}"
-        )
+        logger.warning(f"Webhook unexpected error for alert {alert.alert_id}: {e}")

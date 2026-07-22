@@ -33,7 +33,7 @@ const AdminIPControl = () => {
     loadBlocked();
     const interval = setInterval(loadBlocked, 10000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   const addBlockedIp = async (e) => {

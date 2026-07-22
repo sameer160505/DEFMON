@@ -32,7 +32,9 @@ def _serialize_blocked_ip(row: BlockedIP) -> dict:
     }
 
 
-async def _write_audit(db: AsyncSession, action: str, actor: str, target: str, details: str) -> None:
+async def _write_audit(
+    db: AsyncSession, action: str, actor: str, target: str, details: str
+) -> None:
     db.add(
         AuditLog(
             action=action,

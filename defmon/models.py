@@ -1,9 +1,11 @@
 """DefMon database models — SQLAlchemy async ORM definitions."""
 
+import enum
 import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     Column,
     DateTime,
@@ -12,20 +14,22 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+)
+from sqlalchemy import (
     Enum as SAEnum,
-    JSON,
 )
 from sqlalchemy.orm import DeclarativeBase, relationship
-import enum
 
 
 class Base(DeclarativeBase):
     """Base class for all DefMon database models."""
+
     pass
 
 
 class SeverityLevel(str, enum.Enum):
     """Alert severity classification."""
+
     CRITICAL = "Critical"
     HIGH = "High"
     MEDIUM = "Medium"
@@ -34,6 +38,7 @@ class SeverityLevel(str, enum.Enum):
 
 class IncidentStatus(str, enum.Enum):
     """Incident lifecycle status."""
+
     OPEN = "open"
     IN_PROGRESS = "in_progress"
     CLOSED = "closed"
@@ -41,6 +46,7 @@ class IncidentStatus(str, enum.Enum):
 
 class UserRole(str, enum.Enum):
     """RBAC role definitions."""
+
     ADMIN = "admin"
     ANALYST = "analyst"
     VIEWER = "viewer"

@@ -15,10 +15,10 @@ from pathlib import Path
 from typing import AsyncGenerator, Callable, Optional
 
 from loguru import logger
-from watchfiles import awatch, Change
+from watchfiles import Change, awatch
 
 from defmon.config import get_settings
-from defmon.parser import LogParser, LogEvent
+from defmon.parser import LogEvent, LogParser
 
 
 class LogCollector:
@@ -143,9 +143,7 @@ class LogCollector:
                 new_lines = await self._read_new_lines(path)
                 events = await self._process_lines(new_lines)
                 all_events.extend(events)
-                logger.info(
-                    f"Ingested {len(events)} events from existing file: {path}"
-                )
+                logger.info(f"Ingested {len(events)} events from existing file: {path}")
             else:
                 logger.warning(f"Log file does not exist yet: {path}")
 

@@ -29,7 +29,9 @@ class Settings:
         self.host = app.get("host", "0.0.0.0")
         self.port = app.get("port", 8000)
         self.enable_local_collector = (
-            os.getenv("ENABLE_LOCAL_COLLECTOR", str(app.get("enable_local_collector", False))).lower()
+            os.getenv(
+                "ENABLE_LOCAL_COLLECTOR", str(app.get("enable_local_collector", False))
+            ).lower()
             == "true"
         )
 

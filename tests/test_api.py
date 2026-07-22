@@ -8,21 +8,17 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 import pytest
 import pytest_asyncio
-from fastapi import FastAPI
-from sqlalchemy.engine import Result
 
-from defmon.main import app
-from defmon.models import User, UserRole, Alert, Incident, IncidentStatus, SeverityLevel
-from defmon.api.auth import get_current_user, create_access_token
+from defmon.api.auth import create_access_token, get_current_user
 from defmon.database import get_db
+from defmon.main import app
+from defmon.models import Alert, Incident, IncidentStatus, SeverityLevel, User, UserRole
 
 # ---------------------------------------------------------------------------
 # Mocks & Fixtures
 # ---------------------------------------------------------------------------
 
-mock_user_admin = User(
-    id=1, username="admin", role=UserRole.ADMIN, is_active=True, is_locked=False
-)
+mock_user_admin = User(id=1, username="admin", role=UserRole.ADMIN, is_active=True, is_locked=False)
 mock_user_analyst = User(
     id=2, username="analyst", role=UserRole.ANALYST, is_active=True, is_locked=False
 )
@@ -42,7 +38,9 @@ def mock_db_session():
 async def client_unauth(mock_db_session):
     """AsyncClient without auth."""
     app.dependency_overrides[get_db] = lambda: mock_db_session
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         yield client
     app.dependency_overrides.clear()
 
@@ -52,7 +50,9 @@ async def client_admin(mock_db_session):
     """AsyncClient authed as admin."""
     app.dependency_overrides[get_db] = lambda: mock_db_session
     app.dependency_overrides[get_current_user] = lambda: mock_user_admin
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         yield client
     app.dependency_overrides.clear()
 
@@ -62,7 +62,9 @@ async def client_analyst(mock_db_session):
     """AsyncClient authed as analyst."""
     app.dependency_overrides[get_db] = lambda: mock_db_session
     app.dependency_overrides[get_current_user] = lambda: mock_user_analyst
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         yield client
     app.dependency_overrides.clear()
 
@@ -72,7 +74,9 @@ async def client_viewer(mock_db_session):
     """AsyncClient authed as viewer."""
     app.dependency_overrides[get_db] = lambda: mock_db_session
     app.dependency_overrides[get_current_user] = lambda: mock_user_viewer
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         yield client
     app.dependency_overrides.clear()
 
@@ -85,26 +89,31 @@ async def test_auth_login_success(mock_db_session, monkeypatch):
     """Test standard OAuth2 flow success via local mocking."""
     # Mock passlib to bypass bcrypt version check crash in tests
     monkeypatch.setattr("defmon.api.auth.verify_password", lambda p, h: p == "password123")
-    
+
     pw_hash = "fakehash"
-    
+
     mock_user = User(
-        id=1, username="admin", hashed_password=pw_hash,
-        role=UserRole.ADMIN, is_active=True, is_locked=False
+        id=1,
+        username="admin",
+        hashed_password=pw_hash,
+        role=UserRole.ADMIN,
+        is_active=True,
+        is_locked=False,
     )
-    
+
     mock_scalar = MagicMock()
     mock_scalar.scalar_one_or_none.return_value = mock_user
     mock_db_session.execute.return_value = mock_scalar
-    
+
     app.dependency_overrides[get_db] = lambda: mock_db_session
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         response = await client.post(
-            "/api/auth/login",
-            data={"username": "admin", "password": "password123"}
+            "/api/auth/login", data={"username": "admin", "password": "password123"}
         )
     app.dependency_overrides.clear()
-    
+
     assert response.status_code == 200
     assert "access_token" in response.json()
 
@@ -116,15 +125,16 @@ async def test_auth_login_failure(mock_db_session, monkeypatch):
     mock_scalar = MagicMock()
     mock_scalar.scalar_one_or_none.return_value = None
     mock_db_session.execute.return_value = mock_scalar
-    
+
     app.dependency_overrides[get_db] = lambda: mock_db_session
-    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
+    async with httpx.AsyncClient(
+        transport=httpx.ASGITransport(app=app), base_url="http://testserver"
+    ) as client:
         response = await client.post(
-            "/api/auth/login",
-            data={"username": "admin", "password": "wrongpassword"}
+            "/api/auth/login", data={"username": "admin", "password": "wrongpassword"}
         )
     app.dependency_overrides.clear()
-    
+
     assert response.status_code == 401
 
 
@@ -143,12 +153,17 @@ async def test_get_alerts_admin(client_admin, mock_db_session):
     """Admins should be able to read alerts."""
     mock_scalar = MagicMock()
     mock_alert = Alert(
-        id=1, alert_id=uuid.uuid4(), timestamp=datetime.now(timezone.utc),
-        ip="10.0.0.1", rule_id="XYZ", severity="High", description="desc"
+        id=1,
+        alert_id=uuid.uuid4(),
+        timestamp=datetime.now(timezone.utc),
+        ip="10.0.0.1",
+        rule_id="XYZ",
+        severity="High",
+        description="desc",
     )
     mock_scalar.scalars().all.return_value = [mock_alert]
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_admin.get("/api/alerts")
     assert resp.status_code == 200
     assert len(resp.json()) == 1
@@ -160,7 +175,7 @@ async def test_get_alerts_summary(client_analyst, mock_db_session):
     mock_scalar = MagicMock()
     mock_scalar.all.return_value = [("Critical", 5), ("High", 10)]
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_analyst.get("/api/alerts/summary")
     assert resp.status_code == 200
     data = resp.json()
@@ -175,7 +190,7 @@ async def test_get_top_offenders(client_viewer, mock_db_session):
     mock_scalar = MagicMock()
     mock_scalar.all.return_value = [("10.0.0.1", 100), ("10.0.0.2", 50)]
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_viewer.get("/api/alerts/top-offenders")
     assert resp.status_code == 200
     data = resp.json()
@@ -192,13 +207,16 @@ async def test_get_incidents(client_viewer, mock_db_session):
     """Test getting incidents."""
     mock_scalar = MagicMock()
     mock_incident = Incident(
-        id=1, case_id=uuid.uuid4(), alert_id=uuid.uuid4(),
-        status=IncidentStatus.OPEN, severity=SeverityLevel.HIGH,
-        created_at=datetime.now(timezone.utc)
+        id=1,
+        case_id=uuid.uuid4(),
+        alert_id=uuid.uuid4(),
+        status=IncidentStatus.OPEN,
+        severity=SeverityLevel.HIGH,
+        created_at=datetime.now(timezone.utc),
     )
     mock_scalar.scalars().all.return_value = [mock_incident]
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_viewer.get("/api/incidents")
     assert resp.status_code == 200
     assert len(resp.json()) == 1
@@ -210,13 +228,16 @@ async def test_get_incident_detail(client_analyst, mock_db_session):
     mock_scalar = MagicMock()
     case_uid = uuid.uuid4()
     mock_incident = Incident(
-        id=1, case_id=case_uid, alert_id=uuid.uuid4(),
-        status=IncidentStatus.OPEN, severity=SeverityLevel.HIGH,
-        created_at=datetime.now(timezone.utc)
+        id=1,
+        case_id=case_uid,
+        alert_id=uuid.uuid4(),
+        status=IncidentStatus.OPEN,
+        severity=SeverityLevel.HIGH,
+        created_at=datetime.now(timezone.utc),
     )
     mock_scalar.scalar_one_or_none.return_value = mock_incident
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_analyst.get(f"/api/incidents/{case_uid}")
     assert resp.status_code == 200
     assert resp.json()["case_id"] == str(case_uid)
@@ -228,7 +249,7 @@ async def test_get_incident_detail_not_found(client_admin, mock_db_session):
     mock_scalar = MagicMock()
     mock_scalar.scalar_one_or_none.return_value = None
     mock_db_session.execute.return_value = mock_scalar
-    
+
     resp = await client_admin.get(f"/api/incidents/{str(uuid.uuid4())}")
     assert resp.status_code == 404
 
@@ -241,19 +262,19 @@ async def test_get_metrics(client_analyst, mock_db_session):
     """Test MTTR and MTTD calculation."""
     # First execute is for MTTD, second is for MTTR
     now = datetime.now(timezone.utc)
-    
+
     # Mock Alerts
     alert_1 = Alert(created_at=now, timestamp=now)
     # Mock Incidents
     incident_1 = Incident(created_at=now, closed_at=now)
-    
+
     mock_scalar1 = MagicMock()
     mock_scalar1.scalars().all.return_value = [alert_1]
     mock_scalar2 = MagicMock()
     mock_scalar2.scalars().all.return_value = [incident_1]
-    
+
     mock_db_session.execute.side_effect = [mock_scalar1, mock_scalar2]
-    
+
     resp = await client_analyst.get("/api/metrics")
     assert resp.status_code == 200
     data = resp.json()
@@ -268,9 +289,10 @@ async def test_get_metrics(client_analyst, mock_db_session):
 async def test_websocket_connection():
     """Test the WebSocket endpoint for alerts."""
     from fastapi.testclient import TestClient
+
     client = TestClient(app)
     token = create_access_token({"sub": "admin", "role": UserRole.ADMIN.value})
-    
+
     with client.websocket_connect(f"/api/ws/alerts?token={token}") as websocket:
         websocket.send_text("ping")
         data = websocket.receive_text()
@@ -366,7 +388,9 @@ async def test_get_log_content(client_viewer):
     temp_log = Path("data/test_runtime.log")
     temp_log.write_text("line1\nline2\n", encoding="utf-8")
     try:
-        resp = await client_viewer.get("/api/logs/content", params={"path": "data/test_runtime.log", "lines": 50})
+        resp = await client_viewer.get(
+            "/api/logs/content", params={"path": "data/test_runtime.log", "lines": 50}
+        )
         assert resp.status_code == 200
         assert "line1" in resp.json()["content"]
     finally:

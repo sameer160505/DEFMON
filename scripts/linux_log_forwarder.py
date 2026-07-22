@@ -122,8 +122,7 @@ def main() -> int:
         "--api-base",
         default="",
         help=(
-            "DefMon API base URL, e.g. http://10.0.0.20:8000. "
-            "If omitted, DEFMON_API_BASE is used."
+            "DefMon API base URL, e.g. http://10.0.0.20:8000. If omitted, DEFMON_API_BASE is used."
         ),
     )
     parser.add_argument(

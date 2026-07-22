@@ -12,7 +12,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib import error, parse, request
 
-
 MALICIOUS_PATHS = [
     "/login?user=admin' OR '1'='1",
     "/search?q=<script>alert(1)</script>",
@@ -324,9 +323,7 @@ def run_sender(args: argparse.Namespace) -> int:
         )
         if not lines:
             if not args.continuous:
-                raise RuntimeError(
-                    "No readable log lines found in configured files."
-                )
+                raise RuntimeError("No readable log lines found in configured files.")
             print(
                 "No readable log lines found in configured files; retrying in {}s".format(
                     args.repeat_delay_seconds
@@ -376,7 +373,10 @@ def run_sender(args: argparse.Namespace) -> int:
             total_alerts += alerts
 
             print(
-                "cycle={} batch={} sent={} accepted={} rejected={} malicious={} normal={} alerts={} injected={}".format(
+                (
+                    "cycle={} batch={} sent={} accepted={} rejected={} "
+                    "malicious={} normal={} alerts={} injected={}"
+                ).format(
                     cycle_no,
                     batch_no,
                     sent,
@@ -396,7 +396,10 @@ def run_sender(args: argparse.Namespace) -> int:
             time.sleep(args.repeat_delay_seconds)
 
     print(
-        "done cycles={} batches={} sent={} accepted={} rejected={} malicious={} normal={} alerts={} injected={}".format(
+        (
+            "done cycles={} batches={} sent={} accepted={} rejected={} "
+            "malicious={} normal={} alerts={} injected={}"
+        ).format(
             cycle_no,
             total_batches,
             total_sent,

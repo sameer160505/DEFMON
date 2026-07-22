@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
         const decoded = jwtDecode(token);
         // Check expiry
         if (decoded.exp * 1000 < Date.now()) {
-          // eslint-disable-next-line react-hooks/set-state-in-effect
+           
           logout();
         } else {
           setUser({
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
           sessionStorage.setItem('jwt', token);
         }
       } catch {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+         
         logout();
       }
     } else {

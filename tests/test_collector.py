@@ -3,10 +3,6 @@
 Tests the async file watcher, incremental reading, and event processing.
 """
 
-import asyncio
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from defmon.collector import LogCollector
@@ -50,9 +46,9 @@ class TestIngestExisting:
         """ingest_existing() must parse all lines from existing log files."""
         log_file = tmp_path / "access.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /index.html HTTP/1.1" 200 1024 "-" "Mozilla/5.0"\n'
-            '10.0.0.5 - - [10/Oct/2024:14:00:00 +0000] '
+            "10.0.0.5 - - [10/Oct/2024:14:00:00 +0000] "
             '"POST /api/login HTTP/1.1" 401 128 "-" "curl/7.68.0"\n'
         )
         collector = LogCollector(log_paths=[str(log_file)])
@@ -74,7 +70,7 @@ class TestIngestExisting:
         """ingest_existing() must update collector statistics."""
         log_file = tmp_path / "access.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 200 1024 "-" "Mozilla/5.0"\n'
         )
         collector = LogCollector(log_paths=[str(log_file)])
@@ -89,10 +85,10 @@ class TestIngestExisting:
         """ingest_existing() must skip invalid lines and count correctly."""
         log_file = tmp_path / "mixed.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /a HTTP/1.1" 200 100 "-" "Mozilla/5.0"\n'
-            'INVALID LINE HERE\n'
-            '10.0.0.1 - - [10/Oct/2024:14:00:00 +0000] '
+            "INVALID LINE HERE\n"
+            "10.0.0.1 - - [10/Oct/2024:14:00:00 +0000] "
             '"GET /b HTTP/1.1" 200 200 "-" "curl/7.68.0"\n'
         )
         collector = LogCollector(log_paths=[str(log_file)])
@@ -113,7 +109,7 @@ class TestCollectorCallback:
         """Callback must be invoked for each parsed LogEvent."""
         log_file = tmp_path / "access.log"
         log_file.write_text(
-            '192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] '
+            "192.168.1.1 - - [10/Oct/2024:13:55:36 +0000] "
             '"GET /page HTTP/1.1" 200 1024 "-" "Mozilla/5.0"\n'
         )
         received = []

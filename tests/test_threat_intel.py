@@ -11,13 +11,11 @@ Covers:
 """
 
 import time
-from datetime import datetime, timezone
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch, mock_open
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-import pytest_asyncio
 
 from defmon.utils.threat_intel import ThreatIntelResult, ThreatIntelService, _CacheEntry
 
@@ -78,7 +76,7 @@ def mock_settings_no_key():
 @pytest.fixture
 def service(mock_settings):
     """Create a ThreatIntelService with mocked settings."""
-    with patch.object(ThreatIntelService, '_load_offline_db'):
+    with patch.object(ThreatIntelService, "_load_offline_db"):
         svc = ThreatIntelService(settings=mock_settings)
     return svc
 
@@ -86,7 +84,7 @@ def service(mock_settings):
 @pytest.fixture
 def service_no_key(mock_settings_no_key):
     """Create a ThreatIntelService without API key."""
-    with patch.object(ThreatIntelService, '_load_offline_db'):
+    with patch.object(ThreatIntelService, "_load_offline_db"):
         svc = ThreatIntelService(settings=mock_settings_no_key)
     return svc
 

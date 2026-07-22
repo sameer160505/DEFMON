@@ -12,19 +12,18 @@ Required tests from project spec:
 Plus additional edge-case and integration tests.
 """
 
-import asyncio
 import time
 from datetime import datetime, timezone
 
 import pytest
 
-from defmon.parser import LogEvent
 from defmon.detection.engine import (
-    DetectionEngine,
     Alert,
-    _SlidingWindowCounter,
+    DetectionEngine,
     _BehavioralBaseline,
+    _SlidingWindowCounter,
 )
+from defmon.parser import LogEvent
 
 
 # ---------------------------------------------------------------------------
@@ -52,7 +51,10 @@ def _make_event(
         bytes_sent=bytes_sent,
         user_agent=user_agent,
         referrer=referrer,
-        raw_line=f'{ip} - - [10/Oct/2024:13:55:36 +0000] "{method} {uri} HTTP/1.1" {status_code} {bytes_sent} "{referrer}" "{user_agent}"',
+        raw_line=(
+            f'{ip} - - [10/Oct/2024:13:55:36 +0000] '
+            f'"{method} {uri} HTTP/1.1" {status_code} {bytes_sent} "{referrer}" "{user_agent}"'
+        ),
     )
 
 
@@ -247,7 +249,10 @@ class TestBruteForceDetection:
         # 5 failures from IP A
         for i in range(5):
             event = _make_event(
-                ip="10.0.0.1", method="POST", uri="/api/login", status_code=401,
+                ip="10.0.0.1",
+                method="POST",
+                uri="/api/login",
+                status_code=401,
                 timestamp=datetime.fromtimestamp(base_ts + i, tz=timezone.utc),
             )
             await engine.analyze(event)
@@ -256,7 +261,10 @@ class TestBruteForceDetection:
         all_alerts = []
         for i in range(5):
             event = _make_event(
-                ip="10.0.0.2", method="POST", uri="/api/login", status_code=401,
+                ip="10.0.0.2",
+                method="POST",
+                uri="/api/login",
+                status_code=401,
                 timestamp=datetime.fromtimestamp(base_ts + i, tz=timezone.utc),
             )
             alerts = await engine.analyze(event)
@@ -716,9 +724,9 @@ class TestNoFalsePositives:
             all_alerts.extend(alerts)
 
         rule_alerts = [
-            a for a in all_alerts
-            if a.rule_id in ("SQLI_001", "XSS_001", "TRAVERSAL_001",
-                             "BRUTE_FORCE_001", "SCAN_001")
+            a
+            for a in all_alerts
+            if a.rule_id in ("SQLI_001", "XSS_001", "TRAVERSAL_001", "BRUTE_FORCE_001", "SCAN_001")
         ]
         assert len(rule_alerts) == 0
 

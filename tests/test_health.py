@@ -1,8 +1,5 @@
 """Tests for DefMon FastAPI health endpoint and application setup."""
 
-from unittest.mock import patch, MagicMock
-import pytest
-
 
 class TestHealthEndpoint:
     """Tests for the /health endpoint — Phase 1 goal."""
@@ -11,6 +8,7 @@ class TestHealthEndpoint:
         """Health endpoint must return HTTP 200 with correct JSON body."""
         # Import inside test to ensure env vars from conftest are applied
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)
@@ -25,6 +23,7 @@ class TestHealthEndpoint:
     def test_health_response_structure(self):
         """Health response must contain status, service, and version keys."""
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)
@@ -37,6 +36,7 @@ class TestHealthEndpoint:
     def test_docs_endpoint_available(self):
         """OpenAPI docs endpoint must be accessible at /docs."""
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)
@@ -46,6 +46,7 @@ class TestHealthEndpoint:
     def test_redoc_endpoint_available(self):
         """ReDoc endpoint must be accessible at /redoc."""
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)
@@ -55,6 +56,7 @@ class TestHealthEndpoint:
     def test_openapi_schema(self):
         """OpenAPI JSON schema must be served at /openapi.json."""
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)
@@ -66,6 +68,7 @@ class TestHealthEndpoint:
     def test_cors_headers_present(self):
         """CORS headers must be set for frontend origin."""
         from fastapi.testclient import TestClient
+
         from defmon.main import app
 
         client = TestClient(app)

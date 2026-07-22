@@ -8,9 +8,9 @@ Complexity: O(n) per line where n is line length.
 """
 
 import re
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Optional
+from typing import AsyncGenerator, Optional
 
 import aiofiles
 from loguru import logger
@@ -154,8 +154,7 @@ class LogParser:
                     )
                 except (ValueError, KeyError) as e:
                     logger.warning(
-                        f"Failed to extract fields from log line with pattern "
-                        f"'{pattern_name}': {e}"
+                        f"Failed to extract fields from log line with pattern '{pattern_name}': {e}"
                     )
                     return None
 
@@ -182,7 +181,7 @@ class LogParser:
 # ---------------------------------------------------------------------------
 # Async File Parsing
 # ---------------------------------------------------------------------------
-async def parse_file(path: str, settings=None) -> "AsyncGenerator[LogEvent, None]":
+async def parse_file(path: str, settings=None) -> AsyncGenerator[LogEvent, None]:
     """Async generator that streams LogEvent objects from a log file.
 
     Reads a log file line by line and yields parsed LogEvent objects.
@@ -207,9 +206,7 @@ async def parse_file(path: str, settings=None) -> "AsyncGenerator[LogEvent, None
                     event_count += 1
                     yield event
 
-            logger.info(
-                f"Parsed {event_count}/{line_count} lines from {path}"
-            )
+            logger.info(f"Parsed {event_count}/{line_count} lines from {path}")
     except FileNotFoundError:
         logger.error(f"Log file not found: {path}")
     except PermissionError:

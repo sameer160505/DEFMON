@@ -1,11 +1,5 @@
 """Tests for DefMon configuration loader."""
 
-import os
-from pathlib import Path
-from unittest.mock import patch
-
-import pytest
-
 
 class TestSettings:
     """Tests for the Settings class and config.yaml loading."""

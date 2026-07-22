@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from defmon.api.auth import RoleChecker, get_password_hash
 from defmon.database import get_db
 from defmon.models import User, UserRole
-
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 allow_admin = RoleChecker([UserRole.ADMIN])

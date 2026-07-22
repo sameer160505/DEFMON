@@ -8,9 +8,8 @@ Complexity: O(1) average per lookup (hash table).
 """
 
 import csv
-import os
 import time
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
 
@@ -86,24 +85,22 @@ class ThreatIntelService:
             "base_url", "https://api.abuseipdb.com/api/v2"
         )
         self._max_age_days: int = abuseipdb_config.get("max_age_days", 90)
-        self._confidence_threshold: int = abuseipdb_config.get(
-            "confidence_threshold", 50
-        )
+        self._confidence_threshold: int = abuseipdb_config.get("confidence_threshold", 50)
 
         # API key from environment
         self._api_key: str = self._settings.abuseipdb_key
 
         # Category code to tag mapping from config
         self._category_map: dict[int, str] = {
-            int(k): v
-            for k, v in ti_config.get("category_map", {}).items()
+            int(k): v for k, v in ti_config.get("category_map", {}).items()
         }
 
         # Offline database
         offline_db_path = ti_config.get("offline_db_path", "data/threat_intel.csv")
-        self._offline_db_path: Path = Path(
-            self._settings._config.get("_base_dir", Path(__file__).parent.parent.parent)
-        ) / offline_db_path
+        self._offline_db_path: Path = (
+            Path(self._settings._config.get("_base_dir", Path(__file__).parent.parent.parent))
+            / offline_db_path
+        )
         self._offline_db: dict[str, ThreatIntelResult] = {}
 
         # Load offline DB on startup
@@ -123,9 +120,7 @@ class ThreatIntelService:
         Gracefully handles missing or malformed files.
         """
         if not self._offline_db_path.exists():
-            logger.warning(
-                f"Offline threat intel DB not found: {self._offline_db_path}"
-            )
+            logger.warning(f"Offline threat intel DB not found: {self._offline_db_path}")
             return
 
         try:
@@ -149,9 +144,7 @@ class ThreatIntelService:
                         last_reported_at=row.get("last_reported_at", ""),
                     )
 
-            logger.info(
-                f"Loaded {len(self._offline_db)} entries from offline threat intel DB"
-            )
+            logger.info(f"Loaded {len(self._offline_db)} entries from offline threat intel DB")
         except Exception as e:
             logger.error(f"Failed to load offline threat intel DB: {e}")
 
@@ -271,9 +264,7 @@ class ThreatIntelService:
             logger.warning(f"AbuseIPDB API timeout for IP {ip}")
             return None
         except httpx.HTTPStatusError as e:
-            logger.warning(
-                f"AbuseIPDB API HTTP error for IP {ip}: {e.response.status_code}"
-            )
+            logger.warning(f"AbuseIPDB API HTTP error for IP {ip}: {e.response.status_code}")
             return None
         except Exception as e:
             logger.error(f"AbuseIPDB API unexpected error for IP {ip}: {e}")

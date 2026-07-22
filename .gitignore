@@ -4,3 +4,7 @@ data/db/
 data/logs/
 data/threat_intel/
 *.db
+
+# Environment files
+.env
+.venv/

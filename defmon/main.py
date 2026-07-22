@@ -8,7 +8,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from defmon.api import (
+    admin_router,
+    alerts_router,
+    audit_router,
+    auth_router,
+    incidents_router,
+    logs_router,
+    metrics_router,
+    overview_router,
+    reports_router,
+    senders_router,
+    ws_router,
+)
 from defmon.config import get_settings
+from defmon.pipeline import DefmonPipeline
 
 settings = get_settings()
 
@@ -17,7 +31,6 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown logic."""
     logger.info(f"🛡️ {settings.app_name} v{settings.version} starting up")
-    from defmon.pipeline import DefmonPipeline
     pipeline = None
     pipeline_task = None
 
@@ -70,13 +83,11 @@ async def health_check():
     """Health check endpoint — returns 200 if API is running."""
     return {"status": "healthy", "service": settings.app_name, "version": settings.version}
 
+
 # Add Prometheus Monitoring
 Instrumentator().instrument(app).expose(app)
 
-
 # Register API Routers
-from defmon.api import auth_router, alerts_router, incidents_router, logs_router, metrics_router, ws_router, admin_router, audit_router, overview_router, reports_router, senders_router
-
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(audit_router, prefix="/api")

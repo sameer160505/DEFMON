@@ -19,7 +19,15 @@ class Settings:
         with open(config_path, "r") as f:
             self._config = yaml.safe_load(f)
 
-        self.database_url = "sqlite+aiosqlite:///data/defmon.db"
+        db_user = os.getenv("DB_USER")
+        if db_user:
+            db_pass = os.getenv("DB_PASS", "")
+            db_host = os.getenv("DB_HOST", "localhost")
+            db_port = os.getenv("DB_PORT", "5432")
+            db_name = os.getenv("DB_NAME", "defmon")
+            self.database_url = f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        else:
+            self.database_url = "sqlite+aiosqlite:///data/defmon.db"
 
         # App settings
         app = self._config.get("app", {})
@@ -34,6 +42,7 @@ class Settings:
             ).lower()
             == "true"
         )
+        self.use_seed_logs = app.get("use_seed_logs", False)
 
         # Log sources
         log_sources_env = os.getenv("LOG_PATHS", "").strip()

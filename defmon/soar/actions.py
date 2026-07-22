@@ -160,7 +160,7 @@ async def create_incident(alert: Alert, session: AsyncSession) -> Incident:
     Returns:
         Created Incident ORM object.
     """
-    case_id = str(uuid.uuid4())
+    case_id = uuid.uuid4()
 
     # Audit trail FIRST
     await _write_audit_log(
@@ -181,7 +181,7 @@ async def create_incident(alert: Alert, session: AsyncSession) -> Incident:
 
     incident = Incident(
         case_id=case_id,
-        alert_id=alert.alert_id,
+        alert_id=uuid.UUID(alert.alert_id),
         status=IncidentStatus.OPEN,
         severity=severity_enum,
         description=(f"Auto-generated incident for {alert.rule_id}: {alert.description}"),

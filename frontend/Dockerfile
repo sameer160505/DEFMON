@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Build the Vite application
-RUN npm run build
+RUN chmod +x node_modules/.bin/vite && npm run build
 
 # Stage 2: Serve strictly bounded HTTP chunks via NGINX
 FROM nginx:alpine

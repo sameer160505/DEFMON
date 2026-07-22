@@ -119,7 +119,7 @@ async def update_incident_status(
         )
 
     try:
-        parsed_case_id = uuid.UUID(case_id)
+        parsed_case_id = case_id
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid case_id") from exc
 

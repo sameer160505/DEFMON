@@ -13,8 +13,8 @@ from sqlalchemy import (
     String,
     Text,
     Enum as SAEnum,
+    JSON,
 )
-from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy.orm import DeclarativeBase, relationship
 import enum
 
@@ -85,7 +85,7 @@ class Alert(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    alert_id = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
+    alert_id = Column(String(36), default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
     timestamp = Column(DateTime, nullable=False, index=True)
     ip = Column(String(45), nullable=False, index=True)
     rule_id = Column(String(50), nullable=False, index=True)
@@ -97,7 +97,7 @@ class Alert(Base):
     description = Column(Text, nullable=False)
     raw_event = Column(Text, default="")
     risk_score = Column(Float, default=0.0)
-    tags = Column(ARRAY(String), default=[])
+    tags = Column(JSON, default=list)
     status = Column(String(20), default="new")
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -114,8 +114,8 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    case_id = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
-    alert_id = Column(UUID(as_uuid=True), ForeignKey("alerts.alert_id"), nullable=False)
+    case_id = Column(String(36), default=lambda: str(uuid.uuid4()), unique=True, nullable=False)
+    alert_id = Column(String(36), ForeignKey("alerts.alert_id"), nullable=False)
     status = Column(
         SAEnum(IncidentStatus, values_callable=_enum_values, name="incidentstatus"),
         default=IncidentStatus.OPEN,

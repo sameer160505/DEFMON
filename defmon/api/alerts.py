@@ -125,7 +125,7 @@ async def update_alert_status(
         )
 
     try:
-        parsed_alert_id = uuid.UUID(alert_id)
+        parsed_alert_id = alert_id
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Invalid alert_id") from exc
 

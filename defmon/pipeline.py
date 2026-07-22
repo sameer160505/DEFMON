@@ -65,7 +65,7 @@ class DefmonPipeline:
 
     async def _persist_alert(self, alert: DetectionAlert, tags: list[str], session) -> Alert:
         db_alert = Alert(
-            alert_id=uuid.UUID(alert.alert_id),
+            alert_id=alert.alert_id,
             timestamp=self._to_naive_utc(alert.timestamp),
             ip=alert.ip,
             rule_id=alert.rule_id,

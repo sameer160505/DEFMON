@@ -363,7 +363,7 @@ async def ingest_remote_logs(
             generated_alerts += 1
             merged_tags = list(dict.fromkeys([*alert.tags, *intel.tags]))
             db_alert = Alert(
-                alert_id=uuid.UUID(alert.alert_id),
+                alert_id=alert.alert_id,
                 timestamp=_to_naive_utc(alert.timestamp),
                 ip=alert.ip,
                 rule_id=alert.rule_id,

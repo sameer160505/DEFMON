@@ -19,13 +19,7 @@ class Settings:
         with open(config_path, "r") as f:
             self._config = yaml.safe_load(f)
 
-        # Database URL with env var substitution
-        db_user = os.getenv("DB_USER", "defmon")
-        db_pass = os.getenv("DB_PASS", "changeme")
-        db_host = os.getenv("DB_HOST", "localhost")
-        db_port = os.getenv("DB_PORT", "5432")
-        db_name = os.getenv("DB_NAME", "defmon")
-        self.database_url = f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}"
+        self.database_url = "sqlite+aiosqlite:///data/defmon.db"
 
         # App settings
         app = self._config.get("app", {})
@@ -45,8 +39,6 @@ class Settings:
             self.log_sources = [p.strip() for p in log_sources_env.split(",") if p.strip()]
         else:
             self.log_sources = self._config.get("log_sources", [])
-
-        self.use_seed_logs = os.getenv("USE_SEED_LOGS", "false").lower() == "true"
 
         # Auth
         self.jwt_secret = os.getenv("JWT_SECRET_KEY", "dev-secret-change-me")

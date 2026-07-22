@@ -12,12 +12,11 @@ def get_engine():
     global _engine
     if _engine is None:
         settings = get_settings()
-        _engine = create_async_engine(
-            settings.database_url,
-            pool_size=10,
-            max_overflow=20,
-            echo=settings.debug,
-        )
+        kwargs = {"echo": settings.debug}
+        if "postgresql" in settings.database_url:
+            kwargs["pool_size"] = 10
+            kwargs["max_overflow"] = 20
+        _engine = create_async_engine(settings.database_url, **kwargs)
     return _engine
 
 
